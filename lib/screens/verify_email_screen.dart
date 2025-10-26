@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sagada_tour_planner/screens/gradient_background.dart';
-import 'email_verified_screen.dart';
+import 'email_verified_screen.dart'; // Your success screen
 
 class VerifyEmailScreen extends StatefulWidget {
   final String email;
@@ -22,84 +22,102 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    canResendEmail = true; // Start with button enabled
-    _sendVerificationEmail();
 
-    // Periodically check if the email is verified
+    // 1. Start with the Resend button DISABLED
+    canResendEmail = false;
+
+    // 2. Enable it after a 10-second cooldown
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() => canResendEmail = true);
+      }
+    });
+
+    // 3. Start checking for verification every 3 seconds
     timer = Timer.periodic(
       const Duration(seconds: 3),
       (_) => _checkEmailVerified(),
     );
   }
 
+  @override
+  void dispose() {
+    timer?.cancel(); // Stop the timer when the screen is closed!
+    super.dispose();
+  }
+
   Future<void> _sendVerificationEmail() async {
+    // Store context-sensitive objects
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       setState(() => canResendEmail = false);
 
-      User? user = FirebaseAuth.instance.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
+      await user?.sendEmailVerification();
 
-      // Wait for Firebase to populate the user object
-      int retries = 0;
-      while (user == null && retries < 5) {
-        await Future.delayed(const Duration(milliseconds: 300));
-        user = FirebaseAuth.instance.currentUser;
-        retries++;
-      }
+      if (!mounted) return;
 
-      if (user == null) {
-        throw Exception("User is not signed in yet.");
-      }
-
-      await user.sendEmailVerification();
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Verification email sent.")),
-        );
-      });
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text("Verification email sent."),
+          backgroundColor: Colors.green,
+        ),
+      );
 
       // Cooldown before allowing resend
-      await Future.delayed(const Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 10));
       if (mounted) setState(() => canResendEmail = true);
     } catch (e) {
       if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to send verification email: $e")),
-          );
-        });
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text("Failed to send verification email: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
         setState(() => canResendEmail = true);
       }
     }
   }
 
   Future<void> _checkEmailVerified() async {
+    // Store the navigator before the await
+    final navigator = Navigator.of(context);
     final user = FirebaseAuth.instance.currentUser;
+
+    // We must reload the user to get the latest emailVerified status
     await user?.reload();
 
     if (user != null && user.emailVerified) {
       setState(() => isEmailVerified = true);
-      timer?.cancel();
+      timer?.cancel(); // Stop the timer
 
+      // Update their status in your database
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
         {'isVerified': true},
       );
 
-      // Sign out after successful verification
-      //await FirebaseAuth.instance.signOut();
+      // Sign out *after* they are verified
+      await FirebaseAuth.instance.signOut();
 
-      // Move to success screen instead of login immediately
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const EmailVerifiedScreen()),
-        );
-      }
+      if (!mounted) return;
+
+      // Move to success screen
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const EmailVerifiedScreen()),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Verify Your Email'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: GradientBackground(
         child: SafeArea(
           child: Center(
@@ -120,7 +138,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 60),
                   const Text(
-                    'Verify Email',
+                    'Check Your Email',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
@@ -151,7 +169,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ),
                     ),
                     child: Text(
-                      canResendEmail ? 'Resend Email' : 'Sending...',
+                      canResendEmail ? 'Resend Email' : 'Wait to Resend',
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),

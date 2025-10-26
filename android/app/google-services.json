@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "358935174408",
+    "project_id": "sagada-tour-planner-and-map",
+    "storage_bucket": "sagada-tour-planner-and-map.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:358935174408:android:2f2f49e61a1e2782f2a0bd",
+        "android_client_info": {
+          "package_name": "com.example.sagada_tour_planner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZB3dH7HFl-Wzzx5KDlRPA_QDb8KNtdNA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

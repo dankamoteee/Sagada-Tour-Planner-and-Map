@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sagada_tour_planner/screens/gradient_background.dart';
-import 'verify_email_screen.dart';
+import 'verification_choice_screen.dart';
+
+// <-- 1. Import the new package
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,9 +20,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _fullNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  // <-- 2. Remove the old phone controller
+  // final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  // <-- 3. Add a string to hold the complete phone number (e.g., "+63917...")
+  String _completePhoneNumber = '';
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -30,7 +37,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _fullNameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+    // <-- 4. Remove phone controller from dispose()
+    // _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -38,6 +46,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _registerUser() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Store navigator BEFORE await
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     setState(() => _isLoading = true);
 
@@ -52,37 +64,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
       User? user = userCredential.user;
 
       if (user != null) {
-        // Step 2: Send verification email
-        await user.sendEmailVerification();
+        if (!mounted) return; // Mounted check 1
 
-        // Step 3: Save user data in Firestore
+        // Step 2: Save user data in Firestore (with phone number)
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'fullName': _fullNameController.text.trim(),
           'username': _usernameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
+          // <-- 5. Use the new _completePhoneNumber variable
+          'phone': _completePhoneNumber,
           'createdAt': Timestamp.now(),
-          'isVerified': false, // Custom flag
+          'isVerified': false, // This is now our main flag!
         });
 
-        // Step 4: Sign out to force verification before login
+        if (!mounted) return; // Mounted check 2
 
-        // Step 5: Notify user
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'A verification email has been sent to ${_emailController.text.trim()}. Please check your inbox.',
-            ),
-          ),
-        );
-
-        // Step 6: Navigate to Verify Email screen
-        Navigator.pushReplacement(
-          context,
+        // Step 3: Navigate to the NEW choice screen
+        // We pass the email and phone so the next screen can display them
+        navigator.pushReplacement(
           MaterialPageRoute(
             builder:
-                (context) =>
-                    VerifyEmailScreen(email: _emailController.text.trim()),
+                (context) => VerificationChoiceScreen(
+                  email: _emailController.text.trim(),
+                  // <-- 5. Use the new _completePhoneNumber variable
+                  phone: _completePhoneNumber,
+                ),
           ),
         );
       }
@@ -91,13 +97,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (e.code == 'email-already-in-use') {
         message = "This email is already registered.";
       } else if (e.code == 'weak-password') {
-        message = "Password should be at least 6 characters.";
+        // This is Firebase's error, but our validator is stronger
+        message = "Your password is too weak.";
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      // Use the variable
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -177,18 +185,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
+
+                      // <-- 6. Replace the old TextFormField with IntlPhoneField
+                      IntlPhoneField(
                         decoration: _inputDecoration('Phone Number'),
-                        validator: (value) {
-                          if (value!.isEmpty) return 'Enter your phone number';
-                          if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
-                            return 'Enter a valid phone number';
+                        initialCountryCode: 'PH', // Default to Philippines
+                        onChanged: (phone) {
+                          // This gives the full number with country code
+                          _completePhoneNumber = phone.completeNumber;
+                        },
+                        validator: (phoneNumber) {
+                          if (phoneNumber == null ||
+                              phoneNumber.number.isEmpty) {
+                            return 'Please enter your phone number';
                           }
                           return null;
                         },
                       ),
+
+                      // <-- End of new phone field
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
@@ -207,11 +222,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                         ),
+
+                        // <-- 7. Add new strong password validation logic
                         validator: (value) {
-                          if (value!.isEmpty) return 'Enter your password';
-                          if (value.length < 6) return 'Minimum 6 characters';
-                          return null;
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (value.length < 8) {
+                            return 'Password must be at least 8 characters';
+                          }
+                          if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                            return 'Must contain one uppercase letter';
+                          }
+                          if (!RegExp(r'[a-z]').hasMatch(value)) {
+                            return 'Must contain one lowercase letter';
+                          }
+                          if (!RegExp(r'[0-9]').hasMatch(value)) {
+                            return 'Must contain one number';
+                          }
+                          if (!RegExp(
+                            r'[!@#$%^&*(),.?":{}|<>]',
+                          ).hasMatch(value)) {
+                            return 'Must contain one special character';
+                          }
+                          return null; // Password is valid
                         },
+
+                        // <-- End of new password logic
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

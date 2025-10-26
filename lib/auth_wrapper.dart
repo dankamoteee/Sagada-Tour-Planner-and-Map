@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/map_homescreen.dart';
 import 'screens/login_screen.dart';
 import 'screens/terms_screen.dart';
+import 'screens/verify_email_screen.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -27,10 +28,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final prefs = await SharedPreferences.getInstance();
     final accepted = prefs.getBool('accepted_terms') ?? false;
 
-    setState(() {
-      _user = FirebaseAuth.instance.currentUser;
-      _acceptedTerms = accepted;
-      _loading = false;
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _acceptedTerms = accepted;
+          _loading = false;
+        });
+      }
     });
   }
 
@@ -41,11 +46,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (_user == null) {
-      return const LoginScreen(); // Not logged in
+      return const LoginScreen();
+    } else if (!_user!.emailVerified) {
+      // Pass the user's email to the verification screen
+      return VerifyEmailScreen(email: _user!.email!);
     } else if (!_acceptedTerms) {
-      return const TermsAgreementScreen(); // Logged in but terms not accepted
+      return const TermsAgreementScreen();
     } else {
-      return const MapScreen(); // Logged in + terms accepted
+      return const MapScreen();
     }
   }
 }
