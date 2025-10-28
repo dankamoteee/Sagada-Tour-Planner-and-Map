@@ -7,7 +7,6 @@ import 'package:sagada_tour_planner/screens/gradient_background.dart';
 import 'package:sagada_tour_planner/screens/login_screen.dart';
 import 'package:sagada_tour_planner/screens/terms_screen.dart';
 import 'package:sagada_tour_planner/screens/map_homescreen.dart';
-// <-- 2. ADD VERIFICATION CHOICE SCREEN IMPORT
 import 'package:sagada_tour_planner/screens/verification_choice_screen.dart';
 
 class SplashScreen extends StatefulWidget {

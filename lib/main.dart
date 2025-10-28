@@ -38,6 +38,7 @@ void main() async {
   // --- 2. ADD THE ACTIVATION CODE ---
   await FirebaseAppCheck.instance.activate(
     // Use SafetyNet as the provider for Android
+    providerWeb: ReCaptchaV3Provider('recaptcha-v3-site-key'),
     androidProvider: AndroidProvider.playIntegrity,
     // Use App Attest as the provider for iOS
     appleProvider: AppleProvider.appAttest,

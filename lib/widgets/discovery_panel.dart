@@ -18,7 +18,7 @@ class _DiscoveryPanelState extends State<DiscoveryPanel> {
   bool _isExpanded = false; // Manages the collapsed/expanded state
 
   List<Map<String, dynamic>> _popularPois = [];
-  List<Map<String, dynamic>> _nearbyPois = [];
+  final List<Map<String, dynamic>> _nearbyPois = [];
   bool _isLoadingPopular = true;
   bool _isLoadingNearby = true;
   bool _hasFetchedData = false; // Prevents re-fetching on every expand

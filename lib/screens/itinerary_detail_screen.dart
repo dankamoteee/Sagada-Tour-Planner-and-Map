@@ -273,8 +273,9 @@ class _ItineraryDetailScreenState extends State<ItineraryDetailScreen> {
                             if (context.mounted) Navigator.pop(context);
 
                             // 4. Pop the screen and return the list of coordinates
-                            if (context.mounted)
+                            if (context.mounted) {
                               Navigator.pop(context, coordinates);
+                            }
                           },
                           // --- END OF FIX ---
                         ),

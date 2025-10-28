@@ -61,46 +61,40 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
       phoneNumber: widget.phoneNumber,
       forceResendingToken: _resendToken,
       verificationCompleted: (PhoneAuthCredential credential) async {
-        // This is for auto-retrieval (e.g., on Android)
-        // We can immediately try to verify
-        if (mounted) {
-          setState(() => _isLoading = true);
-          _otpController.text = credential.smsCode ?? '';
-          await _verifyOTP(credential: credential);
-        }
+        // ADD MOUNTED CHECK
+        if (!mounted) return;
+        setState(() => _isLoading = true);
+        _otpController.text = credential.smsCode ?? '';
+        await _verifyOTP(credential: credential);
       },
       verificationFailed: (FirebaseAuthException e) {
-        // 🔽 ADD IT HERE INSTEAD 🔽
-        final scaffoldMessenger = ScaffoldMessenger.of(context);
-        if (mounted) {
-          setState(() => _isLoading = false);
-          scaffoldMessenger.showSnackBar(
-            SnackBar(
-              content: Text('Phone verification failed: ${e.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        // ADD MOUNTED CHECK
+        if (!mounted) return;
+        final scaffoldMessenger = ScaffoldMessenger.of(context); // Get it here
+        setState(() => _isLoading = false);
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Phone verification failed: ${e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       },
       codeSent: (String verificationId, int? resendToken) {
-        // This is the main callback
-        // Save the verification ID and resend token
-        if (mounted) {
-          setState(() {
-            _verificationId = verificationId;
-            _resendToken = resendToken;
-            _isCodeSent = true; // Show the OTP input field
-          });
-        }
+        // ADD MOUNTED CHECK
+        if (!mounted) return;
+        setState(() {
+          _verificationId = verificationId;
+          _resendToken = resendToken;
+          _isCodeSent = true;
+        });
       },
       codeAutoRetrievalTimeout: (String verificationId) {
-        // Called when auto-retrieval times out
-        if (mounted) {
-          setState(() {
-            _verificationId = verificationId;
-            _isCodeSent = true; // Still show the OTP input field
-          });
-        }
+        // ADD MOUNTED CHECK
+        if (!mounted) return;
+        setState(() {
+          _verificationId = verificationId;
+          _isCodeSent = true;
+        });
       },
     );
   }

@@ -1,17 +1,19 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.sagada_tour_planner">
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
 
     <application
-        android:label="sagada_tour_planner_new"
+        android:label="sagada_tour_planner"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
         <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyASDpIPyqjKL9Y_zg4TftfdP1vpedBCmv4"/>
+        android:value="AIzaSyDZB3dH7HFl-Wzzx5KDlRPA_QDb8KNtdNA"/>
 
         <activity
             android:name=".MainActivity"

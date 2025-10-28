@@ -137,8 +137,9 @@ class MarkerService {
 
     final lat = data['lat'] as double?;
     final lng = data['lng'] as double?;
-    if (lat == null || lng == null)
+    if (lat == null || lng == null) {
       return Marker(markerId: MarkerId(data['id']));
+    }
 
     // The cache key now includes whether the label is shown
     final String cacheKey = '${color.value}-${showLabel ? label : ""}';

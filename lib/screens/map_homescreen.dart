@@ -246,7 +246,7 @@ class _MapScreenState extends State<MapScreen> {
     _endNavigation();
 
     final String apiKey =
-        "AIzaSyASDpIPyqjKL9Y_zg4TftfdP1vpedBCmv4"; // Ensure your key is here
+        "AIzaSyDZB3dH7HFl-Wzzx5KDlRPA_QDb8KNtdNA"; // Ensure your key is here
 
     final LatLng origin = LatLng(
       coordinates.first.latitude,
@@ -260,11 +260,7 @@ class _MapScreenState extends State<MapScreen> {
     String waypoints = "";
     if (coordinates.length > 2) {
       waypoints =
-          "optimize:true|" + // Ask Google to optimize the order of waypoints
-          coordinates
-              .sublist(1, coordinates.length - 1)
-              .map((geo) => "${geo.latitude},${geo.longitude}")
-              .join('|');
+          "optimize:true|${coordinates.sublist(1, coordinates.length - 1).map((geo) => "${geo.latitude},${geo.longitude}").join('|')}";
     }
 
     final String url =
@@ -525,7 +521,7 @@ class _MapScreenState extends State<MapScreen> {
     _lastDestination = destination;
 
     PolylinePoints polylinePoints = PolylinePoints(
-      apiKey: "AIzaSyASDpIPyqjKL9Y_zg4TftfdP1vpedBCmv4", // Use your API key
+      apiKey: "AIzaSyDZB3dH7HFl-Wzzx5KDlRPA_QDb8KNtdNA", // Use your API key
     );
 
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
@@ -695,7 +691,7 @@ class _MapScreenState extends State<MapScreen> {
     String mode,
   ) async {
     final String apiKey =
-        "AIzaSyASDpIPyqjKL9Y_zg4TftfdP1vpedBCmv4"; // 👈 use your key
+        "AIzaSyDZB3dH7HFl-Wzzx5KDlRPA_QDb8KNtdNA"; // 👈 use your key
     final String url =
         "https://maps.googleapis.com/maps/api/directions/json"
         "?origin=${origin.latitude},${origin.longitude}"
@@ -1558,8 +1554,9 @@ class _MapScreenState extends State<MapScreen> {
                               // 1. Show the itinerary selector to get the trip ID
                               final Map<String, dynamic>? selectedItinerary =
                                   await _showItinerarySelectorDialog();
-                              if (selectedItinerary == null)
+                              if (selectedItinerary == null) {
                                 return; // User canceled
+                              }
 
                               String itineraryId = selectedItinerary['id']!;
 
